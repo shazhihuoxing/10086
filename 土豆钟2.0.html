@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>土豆钟计时器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif;}
+body{background:#f6efe0;color:#4a3f33;min-height:100vh;display:flex;flex-direction:column;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input{font-family:inherit;}
+header{background:#8a6d4b;color:#fdf6e3;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.clock-time{font-size:26px;font-weight:700;}
+.clock-date{font-size:13px;opacity:.85;}
+.brand{font-size:22px;font-weight:700;}
+main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:22px 18px;display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:20px;align-items:start;}
+@media(max-width:820px){main{grid-template-columns:1fr;}}
+.card{background:#fffdf7;border-radius:18px;box-shadow:0 4px 18px rgba(138,109,75,.12);padding:18px;margin-bottom:20px;}
+.card h2{font-size:16px;color:#8a6d4b;margin-bottom:14px;}
+.timer-card{text-align:center;}
+.task-name{font-size:15px;color:#8a6d4b;margin-bottom:4px;min-height:22px;font-weight:600;}
+.timer-ring{width:220px;height:220px;margin:14px auto 6px;border-radius:50%;background:conic-gradient(#d9a441 var(--p,0%),#efe6d2 0);display:flex;align-items:center;justify-content:center;position:relative;}
+.timer-ring::before{content:"";position:absolute;inset:12px;background:#fffdf7;border-radius:50%;}
+.timer-inner{position:relative;z-index:1;}
+.timer-display{font-size:52px;font-weight:700;color:#4a3f33;}
+.timer-state{font-size:13px;color:#a08b70;}
+.timer-ctrl{display:flex;justify-content:center;gap:12px;margin-top:18px;}
+.timer-ctrl button{padding:10px 22px;border-radius:30px;font-size:15px;font-weight:600;color:#fff;}
+#btnStart{background:#6f9c4d;}
+#btnPause{background:#d9a441;}
+#btnReset{background:#b08b5a;}
+.count-line{margin-top:14px;font-size:14px;color:#8a7a63;}
+.count-line b{color:#6f9c4d;}
+.items-head{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.items-head input[type=text]{flex:1;min-width:130px;padding:9px 12px;border:1.5px solid #e3d5bd;border-radius:10px;font-size:14px;background:#fffdf7;}
+.items-head input[type=number]{width:64px;padding:9px 6px;border:1.5px solid #e3d5bd;border-radius:10px;font-size:14px;text-align:center;background:#fffdf7;}
+#btnAdd{padding:9px 18px;border-radius:10px;background:#8a6d4b;color:#fff;font-size:14px;font-weight:600;}
+.quick{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.quick button{font-size:12px;padding:5px 12px;border-radius:14px;background:#f1e8d5;color:#8a6d4b;font-weight:600;}
+.item-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;}
+.item{display:flex;align-items:center;gap:10px;background:#faf5e9;border:1.5px solid transparent;border-radius:12px;padding:10px 12px;}
+.item.active{border-color:#6f9c4d;background:#f0f6e8;}
+.item .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+.item .iname{flex:1;font-size:15px;font-weight:600;}
+.item .imins{font-size:13px;color:#a08b70;}
+.item .istart{font-size:13px;font-weight:600;color:#fff;background:#6f9c4d;padding:6px 12px;border-radius:16px;}
+.item .idel{color:#c99;font-size:16px;padding:4px 8px;border-radius:8px;}
+.empty-tip{text-align:center;color:#c2b29a;font-size:13px;padding:18px 0;}
+.noise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;}
+.noise-btn{display:flex;flex-direction:column;align-items:center;gap:6px;background:#faf5e9;border:1.5px solid transparent;border-radius:14px;padding:12px 6px;font-size:12px;color:#8a7a63;}
+.noise-btn.on{background:#eef4e4;border-color:#6f9c4d;color:#6f9c4d;font-weight:600;}
+.vol-row{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:#8a7a63;}
+.vol-row input{flex:1;accent-color:#8a6d4b;}
+.record-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:480px){.record-grid{grid-template-columns:1fr;}}
+.rec-sub h3{font-size:13px;color:#a08b70;margin-bottom:10px;}
+.mood-grid,.weather-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;}
+.mood-btn,.weather-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:#faf5e9;border:1.5px solid transparent;border-radius:12px;padding:9px 4px;font-size:11px;color:#8a7a63;}
+.mood-btn.on{background:#fdf0d8;border-color:#d9a441;color:#b07d1e;font-weight:600;}
+.weather-btn.on{background:#e8f1fb;border-color:#5b9bd5;color:#3b7dbd;font-weight:600;}
+.rec-today{margin-top:12px;font-size:13px;color:#8a7a63;background:#faf5e9;border-radius:10px;padding:8px 10px;}
+footer{margin-top:20px;background:#e8dcc4;padding:16px 20px;text-align:center;}
+.quote{font-size:15px;color:#6d5a43;max-width:720px;margin:0 auto;line-height:1.7;cursor:pointer;}
+.quote-hint{font-size:11px;color:#a08b70;margin-top:4px;}
+/* 贴纸层：铺满整个页面，放在最底层 */
+.stickers {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;  /* 关键：贴纸不挡点击，按钮照常能用 */
+  overflow: hidden;
+}
+body1{
+  position: relative;
+}
+.sticker {
+  position: absolute;
+  opacity: 0.55;         /* 透明度，越大越清楚 */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.08));
+}
+/* 让页面内容盖在贴纸上面 */
+header, main, footer {
+  position: relative;
+  z-index: 1;
+}
+
+</style>
+</head>
+<body>
+<div class="stickers">
+  <span class="sticker" style="top:6%;left:4%;font-size:38px;transform:rotate(-12deg)">🥔</span>
+  <span class="sticker" style="top:9%;left:46%;font-size:34px;transform:rotate(8deg)">🥔</span>
+  <span class="sticker" style="top:5%;right:6%;font-size:42px;transform:rotate(-18deg)">🥔</span>
+  <span class="sticker" style="top:32%;left:2%;font-size:32px;transform:rotate(15deg)">🥔</span>
+  <span class="sticker" style="top:45%;left:90%;font-size:36px;transform:rotate(-8deg)">🥔</span>
+  <span class="sticker" style="top:68%;left:5%;font-size:40px;transform:rotate(10deg)">🥔</span>
+  <span class="sticker" style="top:75%;left:48%;font-size:30px;transform:rotate(-15deg)">🥔</span>
+  <span class="sticker" style="top:85%;right:5%;font-size:38px;transform:rotate(12deg)">🥔</span>
+  <span class="sticker" style="bottom:8%;left:20%;font-size:34px;transform:rotate(-10deg)">🥔</span>
+  <span class="sticker" style="bottom:6%;right:25%;font-size:36px;transform:rotate(18deg)">🥔</span>
+  <span class="sticker" style="top:20%;left:28%;font-size:28px;transform:rotate(-6deg)">🥔</span>
+  <span class="sticker" style="top:58%;right:38%;font-size:30px;transform:rotate(14deg)">🥔</span>
+</div>
+
+
+
+<header>
+  <div>
+    <div class="clock-time" id="clockTime">--:--:--</div>
+    <div class="clock-date" id="clockDate"></div>
+  </div>
+  <div class="brand">🥔 土豆钟计时器</div>
+</header>
+
+<main>
+  <!-- 计时器 -->
+  <section class="card timer-card">
+    <h2>专注计时</h2>
+    <div class="task-name" id="taskName">选择一个事项开始学习</div>
+    <div class="timer-ring" id="timerRing">
+      <div class="timer-inner">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-state" id="timerState">未开始</div>
+      </div>
+    </div>
+    <div class="timer-ctrl">
+      <button id="btnStart">开始</button>
+      <button id="btnPause">暂停</button>
+      <button id="btnReset">重置</button>
+    </div>
+    <div class="count-line">今日完成 <b id="todayCount">0</b> 个土豆时段</div>
+  </section>
+
+  <div>
+    <!-- 事项 -->
+    <section class="card">
+      <h2>我的事项</h2>
+      <div class="items-head">
+        <input type="text" id="itemName" placeholder="事项名称，如：数学作业" maxlength="20">
+        <input type="number" id="itemMins" value="25" min="1" max="480">
+        <button id="btnAdd">添加</button>
+      </div>
+      <div class="quick">
+        <button data-q="10">10分钟</button>
+        <button data-q="25">25分钟</button>
+        <button data-q="45">45分钟</button>
+        <button data-q="60">60分钟</button>
+      </div>
+      <div class="item-list" id="itemList"></div>
+      <div class="empty-tip" id="emptyTip">还没有事项，添加一个开始吧</div>
+    </section>
+
+    <!-- 白噪音 -->
+    <section class="card">
+      <h2>白噪音放松</h2>
+      <div class="noise-grid" id="noiseGrid">
+        <button class="noise-btn" data-type="rain">🌧️ 雨声</button>
+        <button class="noise-btn" data-type="ocean">🌊 海浪</button>
+        <button class="noise-btn" data-type="forest">🌲 林风</button>
+        <button class="noise-btn" data-type="fan">🌀 风扇</button>
+        <button class="noise-btn" data-type="fire">🔥 篝火</button>
+      </div>
+      <div class="vol-row"><span>音量</span><input type="range" id="noiseVol" min="0" max="100" value="60"><span id="volVal">60%</span></div>
+    </section>
+
+    <!-- 今日记录 -->
+    <section class="card">
+      <h2>今日记录</h2>
+      <div class="record-grid">
+        <div class="rec-sub">
+          <h3>心情</h3>
+          <div class="mood-grid" id="moodGrid">
+            <button class="mood-btn" data-key="happy">😄 开心</button>
+            <button class="mood-btn" data-key="calm">😌 平静</button>
+            <button class="mood-btn" data-key="tired">😪 疲惫</button>
+            <button class="mood-btn" data-key="anxious">😟 焦虑</button>
+            <button class="mood-btn" data-key="sad">😢 低落</button>
+          </div>
+        </div>
+        <div class="rec-sub">
+          <h3>天气</h3>
+          <div class="weather-grid" id="weatherGrid">
+            <button class="weather-btn" data-key="sunny">☀️ 晴</button>
+            <button class="weather-btn" data-key="cloudy">⛅ 多云</button>
+            <button class="weather-btn" data-key="overcast">☁️ 阴</button>
+            <button class="weather-btn" data-key="rain">🌧️ 小雨</button>
+            <button class="weather-btn" data-key="storm">⛈️ 大雨</button>
+            <button class="weather-btn" data-key="snow">❄️ 雪</button>
+          </div>
+        </div>
+      </div>
+      <div class="rec-today" id="recToday">今天还没有记录，点一点上面的心情和天气吧</div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="quote" id="quote"></div>
+  <div class="quote-hint">点击语录换一句 · 土豆陪你慢慢学</div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+const state = {
+  items: store.get('pc-items', []),
+  current: null,
+  remain: 25 * 60,
+  running: false,
+  timerId: null,
+  today: new Date().toDateString(),
+  todayCount: store.get('pc-count', {}),
+  mood: store.get('pc-mood', {}),
+  weather: store.get('pc-weather', {}),
+  noise: null
+};
+
+// 时钟
+const WEEK = ['日','一','二','三','四','五','六'];
+function tickClock() {
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  $('clockTime').textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  $('clockDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${WEEK[d.getDay()]}`;
+}
+setInterval(tickClock, 1000); tickClock();
+
+// 励志语句
+const QUOTES = ['种一棵树最好的时间是十年前，其次是现在。','每一次专注，都是在为更好的自己浇水。','慢慢来，比较快。','完成比完美更重要。','你现在的努力，是未来惊喜的伏笔。','坚持的人，时间会给他答案。','今天多一分专注，明天少一分焦虑。','好的开始，就是现在。','静下心来，把一件事做好。','知识不会辜负每一个认真的人。','别怕走得慢，只怕原地站。','专注是最好的天赋。','每一次按下开始，都是向前一步。','你只管努力，时间自有安排。','学习是一场和自己的约定。','一点一滴，终成汪洋。','把今天过好，明天就不会太差。','温柔而坚定地学习吧。','心之所向，素履以往。','每天都比昨天进步一点点。'];
+let lastQuote = -1;
+function showQuote() {
+  let i; do { i = Math.floor(Math.random()*QUOTES.length); } while (i === lastQuote && QUOTES.length > 1);
+  lastQuote = i; $('quote').textContent = '“ ' + QUOTES[i] + ' ”';
+}
+showQuote(); $('quote').addEventListener('click', showQuote);
+
+// 计时器
+function fmt(sec) { return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`; }
+function renderTimer() {
+  $('timerDisplay').textContent = fmt(state.remain);
+  const total = state.current ? state.current.minutes * 60 : state.remain;
+  const pct = total > 0 ? (1 - state.remain/total) * 100 : 0;
+  $('timerRing').style.setProperty('--p', pct + '%');
+  $('timerState').textContent = state.running ? '专注中…' : (state.remain < total ? '已暂停' : '未开始');
+}
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0,.25,.5].forEach((t,i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880 - i*100;
+      g.gain.setValueAtTime(.001, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(.3, ctx.currentTime + t + .03);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + .4);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .45);
+    });
+    setTimeout(() => ctx.close(), 1600);
+  } catch(e){}
+}
+function onFinish() {
+  clearInterval(state.timerId); state.timerId = null; state.running = false;
+  beep();
+  if (state.current) {
+    state.todayCount[state.today] = (state.todayCount[state.today] || 0) + 1;
+    store.set('pc-count', state.todayCount);
+    $('todayCount').textContent = state.todayCount[state.today];
+  }
+  renderTimer();
+}
+function countDown() { if (state.remain <= 0) { onFinish(); return; } state.remain--; renderTimer(); }
+function stopTimer() { if (state.timerId) { clearInterval(state.timerId); state.timerId = null; } state.running = false; renderTimer(); }
+$('btnStart').addEventListener('click', () => { if (state.running || state.remain <= 0) return; state.running = true; state.timerId = setInterval(countDown, 1000); renderTimer(); });
+$('btnPause').addEventListener('click', stopTimer);
+$('btnReset').addEventListener('click', () => { stopTimer(); state.remain = state.current ? state.current.minutes*60 : 25*60; renderTimer(); });
+
+// 事项管理
+const DOT_COLORS = ['#6f9c4d','#d9a441','#5b9bd5','#c96f5b','#9b7bd6','#4aa3a0'];
+function loadItem(id, autoStart) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  const isSame = state.current && state.current.id === id;
+  state.current = item; stopTimer();
+  state.remain = item.minutes * 60;
+  $('taskName').textContent = `${item.name} · ${item.minutes} 分钟`;
+  renderItems();
+  if (autoStart && !isSame) $('btnStart').click();
+}
+function renderItems() {
+  const list = $('itemList');
+  list.innerHTML = '';
+  $('emptyTip').style.display = state.items.length ? 'none' : 'block';
+  state.items.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'item' + (state.current && state.current.id === item.id ? ' active' : '');
+    const dot = document.createElement('span');
+    dot.className = 'dot'; dot.style.background = DOT_COLORS[idx % DOT_COLORS.length];
+    const name = document.createElement('span'); name.className = 'iname'; name.textContent = item.name;
+    const mins = document.createElement('span'); mins.className = 'imins'; mins.textContent = item.minutes + ' 分钟';
+    const start = document.createElement('button'); start.className = 'istart';
+    start.textContent = (state.current && state.current.id === item.id) ? '再次沉浸' : '开始学习';
+    start.addEventListener('click', e => { e.stopPropagation(); loadItem(item.id, true); });
+    const del = document.createElement('button'); del.className = 'idel'; del.textContent = '×';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      state.items = state.items.filter(i => i.id !== item.id);
+      if (state.current && state.current.id === item.id) { state.current = null; $('taskName').textContent = '选择一个事项开始学习'; }
+      store.set('pc-items', state.items); renderItems();
+    });
+    row.addEventListener('click', () => loadItem(item.id, true));
+    row.append(dot, name, mins, start, del);
+    list.appendChild(row);
+  });
+}
+function addItem(name, minutes) {
+  name = name.trim();
+  if (!name) { $('itemName').focus(); return; }
+  minutes = Math.max(1, Math.min(480, Math.round(minutes || 25)));
+  state.items.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,6), name, minutes });
+  store.set('pc-items', state.items);
+  $('itemName').value = ''; $('itemMins').value = 25;
+  renderItems();
+}
+$('btnAdd').addEventListener('click', () => addItem($('itemName').value, Number($('itemMins').value)));
+$('itemName').addEventListener('keydown', e => { if (e.key === 'Enter') addItem($('itemName').value, Number($('itemMins').value)); });
+document.querySelectorAll('.quick button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (!$('itemName').value.trim()) { $('itemName').focus(); return; }
+    addItem($('itemName').value, Number(b.dataset.q));
+  });
+});
+
+// 白噪音（Web Audio 生成，无需网络）
+let actx = null, noiseGain = null, noiseSource = null, noiseLFO = null, noiseSource2 = null;
+function ensureAudio() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    noiseGain = actx.createGain();
+    noiseGain.gain.value = Number($('noiseVol').value) / 100 * 0.5;
+    noiseGain.connect(actx.destination);
+  }
+  if (actx.state === 'suspended') actx.resume();
+}
+function makeNoiseBuffer() {
+  const len = actx.sampleRate * 2;
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+function startNoise(type) {
+  stopNoise(); ensureAudio();
+  const buf = makeNoiseBuffer();
+  noiseSource = actx.createBufferSource();
+  noiseSource.buffer = buf; noiseSource.loop = true;
+  const pre = actx.createGain(); pre.gain.value = 1;
+  const filt = actx.createBiquadFilter();
+  const g2 = actx.createGain(); g2.gain.value = 1;
+  if (type === 'rain') {
+    filt.type = 'bandpass'; filt.frequency.value = 1800; filt.Q.value = 0.6;
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.4;
+    const lg = actx.createGain(); lg.gain.value = 0.25;
+    lfo.connect(lg); lg.connect(g2.gain); lfo.start(); noiseLFO = lfo;
+  } else if (type === 'ocean') {
+    filt.type = 'lowpass'; filt.frequency.value = 600;
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.09;
+    const lg = actx.createGain(); lg.gain.value = 0.4;
+    lfo.connect(lg); lg.connect(g2.gain); lfo.start(); noiseLFO = lfo;
+    g2.gain.value = 0.6;
+  } else if (type === 'forest') {
+    filt.type = 'lowpass'; filt.frequency.value = 1000;
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.25;
+    const lg = actx.createGain(); lg.gain.value = 0.35;
+    lfo.connect(lg); lg.connect(g2.gain); lfo.start(); noiseLFO = lfo;
+  } else if (type === 'fan') {
+    filt.type = 'lowpass'; filt.frequency.value = 350; g2.gain.value = 0.9;
+  } else if (type === 'fire') {
+    filt.type = 'lowpass'; filt.frequency.value = 500; g2.gain.value = 0.8;
+    noiseSource2 = actx.createBufferSource();
+    noiseSource2.buffer = buf; noiseSource2.loop = true;
+    const fp = actx.createBiquadFilter(); fp.type = 'lowpass'; fp.frequency.value = 220;
+    noiseSource2.connect(fp); fp.connect(pre); noiseSource2.start();
+  }
+  noiseSource.connect(pre); pre.connect(filt); filt.connect(g2); g2.connect(noiseGain);
+  noiseSource.start();
+  state.noise = type; updateNoiseUI();
+}
+function stopNoise() {
+  if (noiseSource) { try{noiseSource.stop();}catch(e){} noiseSource.disconnect(); noiseSource = null; }
+  if (noiseSource2) { try{noiseSource2.stop();}catch(e){} noiseSource2.disconnect(); noiseSource2 = null; }
+  if (noiseLFO) { try{noiseLFO.stop();}catch(e){} noiseLFO = null; }
+  state.noise = null; updateNoiseUI();
+}
+function updateNoiseUI() {
+  document.querySelectorAll('.noise-btn').forEach(b => b.classList.toggle('on', b.dataset.type === state.noise));
+}
+document.querySelectorAll('.noise-btn').forEach(b => {
+  b.addEventListener('click', () => { if (state.noise === b.dataset.type) stopNoise(); else startNoise(b.dataset.type); });
+});
+$('noiseVol').addEventListener('input', e => {
+  $('volVal').textContent = e.target.value + '%';
+  if (noiseGain) noiseGain.gain.value = Number(e.target.value) / 100 * 0.5;
+});
+
+// 心情 + 天气
+const MOOD_LABEL = { happy:'开心', calm:'平静', tired:'疲惫', anxious:'焦虑', sad:'低落' };
+const WEATHER_LABEL = { sunny:'晴', cloudy:'多云', overcast:'阴', rain:'小雨', storm:'大雨', snow:'雪' };
+function todayKey() { return new Date().toDateString(); }
+function renderRec() {
+  const k = todayKey(), m = state.mood[k], w = state.weather[k];
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('on', b.dataset.key === m));
+  document.querySelectorAll('.weather-btn').forEach(b => b.classList.toggle('on', b.dataset.key === w));
+  $('recToday').textContent = m || w
+    ? `今日心情：${m ? MOOD_LABEL[m] : '未记录'} ｜ 今日天气：${w ? WEATHER_LABEL[w] : '未记录'}`
+    : '今天还没有记录，点一点上面的心情和天气吧';
+}
+document.querySelectorAll('.mood-btn').forEach(b => b.addEventListener('click', () => {
+  const k = todayKey(); state.mood[k] = b.dataset.key;
+  store.set('pc-mood', state.mood); renderRec();
+}));
+document.querySelectorAll('.weather-btn').forEach(b => b.addEventListener('click', () => {
+  const k = todayKey(); state.weather[k] = b.dataset.key;
+  store.set('pc-weather', state.weather); renderRec();
+}));
+
+// 初始化
+$('todayCount').textContent = state.todayCount[state.today] || 0;
+renderItems(); renderTimer(); renderRec();
+</script>
+</body>
+</html>
